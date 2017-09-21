@@ -1,7 +1,11 @@
 Install Apache Spark across CentOS 7 Cluster
 
-There are certain packages that you will be required to install one each node of your cluster. Apache Spark communication between the master and slave nodes is accomplished via SSH, therefore it is a good idea to begin by establishing OpenSSH servers on each node. This guide will assume that each node has the "sparkuser" user account.
-Your cluster will require use of fully qualified domain names (FQDNs), thus it is a good idea to setup a proper DNS server with forward and reverse zone mapping to each node on your cluster. 
+There are certain packages that you will be required to install one each node of your cluster. 
+Apache Spark communication between the master and slave nodes is accomplished via SSH, therefore 
+it is a good idea to begin by establishing OpenSSH servers on each node. This guide will assume 
+that each node has the "sparkuser" user account.
+Your cluster will require use of fully qualified domain names (FQDNs), thus it is a good idea to 
+setup a proper DNS server with forward and reverse zone mapping to each node on your cluster. 
 
 
 1. set domain names for the five hosts in nameserver (dns.deloittecloud.com). root previlige is needed.
