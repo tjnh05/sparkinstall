@@ -75,7 +75,7 @@ cd /opt && tar xvf ~/spark-2.2.0-bin-hadoop2.7.tgz
 chown -R sparkuser:sparkuser /opt/spark-2.2.0-bin-hadoop2.7
 
 11.create symbolic link to directory /opt/spark-2.2.0-bin-hadoop2.7 in each machine by root user
-su -c "ln -s /opt/spark-2.2.0-bin-hadoop2.7 spark" - sparkuser
+su -c "ln -s /opt/spark-2.2.0-bin-hadoop2.7 /home/sparkuser/spark" - sparkuser
 
 12.modify /home/sparkuser/.bashrc in each machine by user root
 su -c "echo 'export SPARK_HOME=$HOME/spark' >> /home/sparkuser/.bashrc" - sparkuser
