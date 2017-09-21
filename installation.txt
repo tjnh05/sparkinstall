@@ -82,6 +82,20 @@ su -c "echo 'export SPARK_HOME=$HOME/spark' >> /home/sparkuser/.bashrc" - sparku
 su -c "echo 'export PATH=$PATH:$SPARK_HOME/bin' >> /home/sparkuser/.bashrc" - sparkuser
 su -c "echo 'export JAVA_HOME=/lib/jvm/java-1.8.0-openjdk/jre' >> /home/sparkuser/.bashrc" - sparkuser
 
+if jupyter notebook is used,  you can append lines below to .bashrc
+{
+cat <<!
+function snotebook ()
+{
+PYSPARK_DRIVER_PYTHON="jupyter"
+PYSPARK_DRIVER_PYTHON_OPTS="notebook --no-browser"
+#$SPARK_HOME/bin/pyspark --master local[2]
+MASTER=spark://sparkm.deloittecloud.com:7077 pyspark
+}
+!
+} | tee -a /home/sparkuser/.bashrc
+
+
 13.add Each Slave Node Address to Master Node Config File in host sparkm.deloittecloud.com by user root.
 {
 cat <<!
