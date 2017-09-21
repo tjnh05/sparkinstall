@@ -1,0 +1,110 @@
+Install Apache Spark across CentOS 7 Cluster
+
+There are certain packages that you will be required to install one each node of your cluster. Apache Spark communication between the master and slave nodes is accomplished via SSH, therefore it is a good idea to begin by establishing OpenSSH servers on each node. This guide will assume that each node has the "sparkuser" user account.
+Your cluster will require use of fully qualified domain names (FQDNs), thus it is a good idea to setup a proper DNS server with forward and reverse zone mapping to each node on your cluster. 
+
+
+1. set domain names for the five hosts in nameserver (dns.deloittecloud.com). root previlige is needed.
+sparkm.deloittecloud.com    10.13.1.23
+sparks0.deloittecloud.com   10.13.1.24
+sparks1.deloittecloud.com   10.13.1.25
+sparks2.deloittecloud.com   10.13.1.26
+sparks3.deloittecloud.com   10.13.1.27
+
+2. DNS setting in each machine by root user.
+Modify network interface and add lines below in network interface configureation file.
+DNS1=10.13.1.78
+DNS2=218.201.4.3
+
+then restart network service.
+systemctl restart network
+
+3.set host name in each machine using hostnamectl  by root user.
+for example, change host name of 10.13.1.23: 
+hostnamectl set-hostname "sparkm.deloittecloud.com"
+
+4.modify timezone to Asia/Chongqing in each machine by root user.
+mv /etc/localtime /etc/localtime.bak
+ln -s /usr/share/zoneinfo/Asia/Chongqing /etc/localtime
+ 
+5.setup NTP server to update time in each machine by root user.
+yum install chrony
+systemctl enable chronyd.service
+systemctl start chronyd.service
+chronyc sources
+chronyc sourcestats
+
+6.create user sparkuser in each machine by root user
+useradd -d /home/sparkuser -s /bin/bash -U sparkuser
+passwd sparkuser
+
+password may be created by comand below:
+openssl rand -hex 10
+
+7.install packages in each machine by root user
+yum install wget net-tools bind-utils epel-release -y && yum update -y 
+yum groupinstall "Development tools"
+yum install -y R
+yum install -y python34 python34-pip.noarch 
+yum install -y python-pip python-virtualenv
+pip install --upgrade pip
+pip install pylib matplotlib pandas
+
+options:
+- install juypter in host sparkm.deloittecloud.com:
+pip install jupyter
+
+8.download scala and spark in host sparkm.deloittecloud.com.
+cd ~
+wget http://mirrors.hust.edu.cn/apache/spark/spark-2.2.0/spark-2.2.0-bin-hadoop2.7.tgz
+wget http://www.scala-lang.org/files/archive/scala-2.11.8.rpm
+
+copy the both files to other hosts by user root, for example copy to host sparks0.deloittecloud.com
+scp spark-2.2.0-bin-hadoop2.7.tgz sparks0.deloittecloud.com:/tmp
+scp scala-2.11.8.rpm sparks0.deloittecloud.com:/tmp
+
+9.install scala in each machine by use root.
+rpm -Uvh ~/scala-2.11.8.rpm
+
+10.unzip file spark-2.2.0-bin-hadoop2.7.tgz and place them in directory /opt in each machine by root user.
+cd /opt && tar xvf ~/spark-2.2.0-bin-hadoop2.7.tgz
+chown -R sparkuser:sparkuser /opt/spark-2.2.0-bin-hadoop2.7
+
+11.create symbolic link to directory /opt/spark-2.2.0-bin-hadoop2.7 in each machine by root user
+su -c "ln -s /opt/spark-2.2.0-bin-hadoop2.7 spark" - sparkuser
+
+12.modify /home/sparkuser/.bashrc in each machine by user root
+su -c "echo 'export SPARK_HOME=$HOME/spark' >> /home/sparkuser/.bashrc" - sparkuser
+su -c "echo 'export PATH=$PATH:$SPARK_HOME/bin' >> /home/sparkuser/.bashrc" - sparkuser
+su -c "echo 'export JAVA_HOME=/lib/jvm/java-1.8.0-openjdk/jre' >> /home/sparkuser/.bashrc" - sparkuser
+
+13.add Each Slave Node Address to Master Node Config File in host sparkm.deloittecloud.com by user root.
+{
+cat <<!
+127.0.0.1
+sparks0.deloittecloud.com
+sparks1.deloittecloud.com
+sparks2.deloittecloud.com
+sparks3.deloittecloud.com
+!
+} | tee -a  /home/sparkuser/spark/conf/slaves
+
+chmod sparkuser:sparkuser /home/sparkuser/spark/conf/slaves
+
+14.Setup key-based Authentication from Master Node for user sparkuser by root user.
+su -c "ssh-keygen -t rsa" - sparkuser
+su -c "ssh-copy-id sparkuser@localhost" - sparkuser
+su -c "ssh-copy-id sparkuser@sparks0.deloittecloud.com" - sparkuser
+su -c "ssh-copy-id sparkuser@sparks1.deloittecloud.com" - sparkuser
+su -c "ssh-copy-id sparkuser@sparks2.deloittecloud.com" - sparkuser
+su -c "ssh-copy-id sparkuser@sparks3.deloittecloud.com" - sparkuser
+
+15. open ports from firewall in each node by root user.
+firewall-cmd --permanent --zone=public --add-port=6066/tcp
+firewall-cmd --permanent --zone=public --add-port=7077/tcp
+firewall-cmd --permanent --zone=public --add-port=8080-8081/tcp
+firewall-cmd --reload
+
+16.start spark cluster in node sparkm.deloittecloud.com
+su -c "$SPARK_HOME/sbin/start-all.sh" - sparkuser
+
