@@ -126,3 +126,6 @@ firewall-cmd --reload
 16.start spark cluster in node sparkm.deloittecloud.com
 su -c "$SPARK_HOME/sbin/start-all.sh" - sparkuser
 
+17.use jupyter notbook to startup pyspark
+source /home/sparkuser/.bashrc
+snotebook
