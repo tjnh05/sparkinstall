@@ -107,8 +107,16 @@ su -c "ssh-copy-id sparkuser@sparks3.deloittecloud.com" - sparkuser
 firewall-cmd --permanent --zone=public --add-port=6066/tcp
 firewall-cmd --permanent --zone=public --add-port=7077/tcp
 firewall-cmd --permanent --zone=public --add-port=8080-8081/tcp
+firewall-cmd --permanent --zone=public --add-port=4040/tcp
+firewall-cmd --permanent --zone=public --add-port=38129/tcp
 firewall-cmd --reload
 
 16.start spark cluster in node sparkm.deloittecloud.com
 su -c "$SPARK_HOME/sbin/start-all.sh" - sparkuser
 
+
+
+ssh sparks0.deloittecloud.com firewall-cmd --permanent --zone=public --add-port=38129/tcp && firewall-cmd --reload
+git clone https://github.com/jadianes/spark-py-notebooks.git
+
+ssh sparks1.deloittecloud.com mkdir /opt/data;chown sparkuser:sparkuser /opt/data && cd /opt/data && su -c "git clone https://github.com/jadianes/spark-py-notebooks.git" - sparkuser
