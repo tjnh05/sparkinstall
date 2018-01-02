@@ -8,8 +8,9 @@
   become_user: root
 
   vars:
-     SPARK_HOME=/usr/hdp/current/spark2-client/
-     SPARK_PY_NOTEBOOKS=/opt/data/spark-py-notebooks/
+     SPARK_HOME: /usr/hdp/current/spark2-client/
+     SPARK_PY_NOTEBOOKS: /opt/data/spark-py-notebooks/
+     SPARK_MAJOR_VERSION: 2
 
   tasks:
    - name: Set environment variable SPARK_MAJOR_VERSION as 2
@@ -17,16 +18,31 @@
        path: /etc/environment
        regexp: '^export SPARK_MAJOR_VERSION'
        line: 'export SPARK_MAJOR_VERSION=2'
-       
+
+   - name: Check if HDFS directory /user/sparkuser exists
+     shell: "sudo -u hdfs hadoop fs -test -d /user/sparkuser; echo $?"
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+     
+   - debug: var=retval
+
    - name: Create HDFS home directory for user sparkuser
-     command: "sudo -u hdfs hadoop fs -mkdir /user/sparkuser"
+     command: "sudo -u hdfs hadoop fs -mkdir -p /user/sparkuser"
+     when: retval.stdout == "1"
+     args:
+       warn: no
      
    - name: Change owner of HDFS directory /user/sparkuser to sparkuser
      command: "sudo -u hdfs hadoop fs -chown sparkuser /user/sparkuser"
+     args:
+       warn: no
 
    - name: Create directory downloads
      file:
        path: /root/downloads
+       state: directory
        recurse: yes
        owner: root
        group: root
@@ -39,18 +55,112 @@
        
    - name: Download file VS14MORT.txt.gz if not exists
      get_url:
-       dest: /root/downloads/
-       url: {{items}}
-     with_items:
-       - http://tomdrabas.com/data/VS14MORT.txt.gz
+       dest: /home/sparkuser/VS14MORT.txt.gz
+       url: http://tomdrabas.com/data/VS14MORT.txt.gz
 
-   - name: Put local files to HDFS directory /user/sparkuser/
-     command: "sudo -u hdfs hadoop fs -put {{item}}"
+   - name: Check if HDFS file /user/sparkuser/VS14MORT.txt.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
-       - /root/downloads/VS14MORT.txt.gz
-       - "{{SPARK_HOME}}data"
-       - "{{SPARK_HOME}}examples"
+       - /user/sparkuser/VS14MORT.txt.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+   - debug: var=retval
+     
+   - name: Put VS14MORT.txt.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - /home/sparkuser/VS14MORT.txt.gz
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+     
+   - name: Check if HDFS directory /user/sparkuser/data exists
+     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/data
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+   - debug: var=retval
+     
+   - name: Put /user/sparkuser/data
+     command: "sudo -u sparkuser hadoop fs -put {{item}} data"
+     with_items:
+       - "{{SPARK_HOME}}data/"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+     
+   - name: Check if HDFS file /user/sparkuser/README.md exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/README.md
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+   - debug: var=retval
+     
+   - name: Put /user/sparkuser/README.md
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
        - "{{SPARK_PY_NOTEBOOKS}}README.md"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+     
+   - name: Check if HDFS file /user/sparkuser/kddcup.data_10_percent.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/kddcup.data_10_percent.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+   - debug: var=retval
+     
+   - name: Put /user/sparkuser/kddcup.data_10_percent.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
        - "{{SPARK_PY_NOTEBOOKS}}nb10-sql-dataframes/kddcup.data_10_percent.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+     
+   - name: Check if HDFS file /user/sparkuser/kddcup.data.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/kddcup.data.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+   - debug: var=retval
+     
+   - name: Put /user/sparkuser/kddcup.data.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
        - "{{SPARK_PY_NOTEBOOKS}}nb3-rdd-sampling/kddcup.data.gz"
-       
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+     
+   - name: Check if HDFS file /user/sparkuser/corrected.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/corrected.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+     
+   - name: Put /user/sparkuser/corrected.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "{{SPARK_PY_NOTEBOOKS}}nb8-mllib-logit/corrected.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
