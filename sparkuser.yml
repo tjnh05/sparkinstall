@@ -10,6 +10,7 @@
   vars:
      SPARK_HOME: /usr/hdp/current/spark2-client/
      SPARK_PY_NOTEBOOKS: /opt/data/spark-py-notebooks/
+     LEARNING_PYSPARK: /home/sparkuser/Learning-PySpark/
      SPARK_MAJOR_VERSION: 2
 
   tasks:
@@ -161,6 +162,23 @@
      command: "sudo -u sparkuser hadoop fs -put {{item}}"
      with_items:
        - "{{SPARK_PY_NOTEBOOKS}}nb8-mllib-logit/corrected.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+       
+   - name: Check if HDFS file /user/sparkuser/flight-data exists
+     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/flight-data
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+     
+   - name: Put /user/sparkuser/flight-data
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "{{LEARNING_PYSPARK}}Chapter02/flight-data"
      when: retval.results[0].stdout == "1"
      args:
        warn: no
