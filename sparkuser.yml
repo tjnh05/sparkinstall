@@ -182,3 +182,25 @@
      when: retval.results[0].stdout == "1"
      args:
        warn: no
+   
+   - name: Check if HDFS file /user/sparkuser/ccFraud.csv.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/ccFraud.csv.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+     
+   - name: Put /user/sparkuser/ccFraud.csv.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/ccFraud.csv.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no   
+       
+   - name: Install bokeh module 
+     pip: name=bokeh state=present
+      
+
