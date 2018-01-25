@@ -199,6 +199,58 @@
      when: retval.results[0].stdout == "1"
      args:
        warn: no   
+   
+   - name: Check if HDFS file /user/sparkuser/births_train.csv.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/births_train.csv.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+     
+   - name: Put /user/sparkuser/births_train.csv.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/births_train.csv.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no  
+   
+   - name: Check if HDFS file /user/sparkuser/airports.dat exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/airports.dat
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+
+   - name: Put /user/sparkuser/airports.dat
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/airports.dat"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+   
+   - name: Check if HDFS file /user/sparkuser/airports-extended.dat exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/airports-extended.dat
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+
+   - name: Put /user/sparkuser/airports-extended.dat
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/airports-extended.dat"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+
        
    - name: Install bokeh module 
      pip: name=bokeh state=present
