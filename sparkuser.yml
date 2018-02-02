@@ -250,9 +250,9 @@
      when: retval.results[0].stdout == "1"
      args:
        warn: no
-
-       
+    
    - name: Install bokeh module 
      pip: name=bokeh state=present
       
-
+   - name: Install tensorflow module
+     pip: name=tensorflow state=present
