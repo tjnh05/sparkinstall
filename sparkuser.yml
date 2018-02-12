@@ -250,6 +250,59 @@
      when: retval.results[0].stdout == "1"
      args:
        warn: no
+   
+   - name: Check if HDFS file /user/sparkuser/TrafficViolations.csv exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/TrafficViolations.csv
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+
+   - name: Put /user/sparkuser/TrafficViolations.csv
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/TrafficViolations.csv"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+
+   - name: Check if HDFS file /user/sparkuser/TrafficViolations.csv.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/TrafficViolations.csv.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+
+   - name: Put /user/sparkuser/TrafficViolations.csv.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/TrafficViolations.csv.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+   
+   - name: Check if HDFS directory /user/sparkuser/uber_data_nyc_2016-06_3m_partitioned.csv exists
+     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/uber_data_nyc_2016-06_3m_partitioned.csv
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+   - debug: var=retval
+
+   - name: Put /user/sparkuser/uber_data_nyc_2016-06_3m_partitioned.csv
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/uber_data_nyc_2016-06_3m_partitioned.csv"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no
+
     
    - name: Install python modules
      pip: name={{item}} state=present
