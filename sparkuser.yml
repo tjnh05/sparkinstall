@@ -313,3 +313,8 @@
        - sqlalchemy
        - pymongo
 
+   - name: Install packages
+     yum: name={{item}} state=present
+     with_items:
+       - tkinter
+       - python34-tkinter
