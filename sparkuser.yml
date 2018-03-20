@@ -1,9 +1,9 @@
 ---
 # Create sparkuser home directory of hdfs
 # written by bodhi wang
-# bodwang@deloitte.com.cn
+# jyxz5@qq.com
 # Dec 26, 2017
-- hosts: sparkm.deloittecloud.com
+- hosts: sparkm.xxx.com
   become: yes
   become_user: root
 
