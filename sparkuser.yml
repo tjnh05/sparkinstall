@@ -12,6 +12,8 @@
      SPARK_PY_NOTEBOOKS: /opt/data/spark-py-notebooks/
      LEARNING_PYSPARK: /home/sparkuser/Learning-PySpark/
      SPARK_MAJOR_VERSION: 2
+     GIT_DIR: /usr/local/src/
+     PROXY_SERV: 10.13.1.94
 
   tasks:
    - name: Set environment variable SPARK_MAJOR_VERSION as 2
@@ -182,9 +184,9 @@
      when: retval.results[0].stdout == "1"
      args:
        warn: no
-   
+
    - name: Check if HDFS file /user/sparkuser/ccFraud.csv.gz exists
-     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
        - /user/sparkuser/ccFraud.csv.gz
      register: retval
@@ -198,10 +200,10 @@
        - "/home/sparkuser/ccFraud.csv.gz"
      when: retval.results[0].stdout == "1"
      args:
-       warn: no   
-   
+       warn: no
+
    - name: Check if HDFS file /user/sparkuser/births_train.csv.gz exists
-     shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
        - /user/sparkuser/births_train.csv.gz
      register: retval
@@ -216,7 +218,24 @@
      when: retval.results[0].stdout == "1"
      args:
        warn: no  
-   
+
+   - name: Check if HDFS file /user/sparkuser/births_transformed.csv.gz exists
+     shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
+     with_items:
+       - /user/sparkuser/births_transformed.csv.gz
+     register: retval
+     args:
+       warn: no
+     changed_when: false
+     
+   - name: Put /user/sparkuser/births_transformed.csv.gz
+     command: "sudo -u sparkuser hadoop fs -put {{item}}"
+     with_items:
+       - "/home/sparkuser/births_transformed.csv.gz"
+     when: retval.results[0].stdout == "1"
+     args:
+       warn: no 
+ 
    - name: Check if HDFS file /user/sparkuser/airports.dat exists
      shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
@@ -225,15 +244,15 @@
      args:
        warn: no
      changed_when: false
-
+     
    - name: Put /user/sparkuser/airports.dat
      command: "sudo -u sparkuser hadoop fs -put {{item}}"
      with_items:
        - "/home/sparkuser/airports.dat"
      when: retval.results[0].stdout == "1"
      args:
-       warn: no
-   
+       warn: no 
+ 
    - name: Check if HDFS file /user/sparkuser/airports-extended.dat exists
      shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
@@ -242,15 +261,15 @@
      args:
        warn: no
      changed_when: false
-
+     
    - name: Put /user/sparkuser/airports-extended.dat
      command: "sudo -u sparkuser hadoop fs -put {{item}}"
      with_items:
        - "/home/sparkuser/airports-extended.dat"
      when: retval.results[0].stdout == "1"
      args:
-       warn: no
-   
+       warn: no 
+ 
    - name: Check if HDFS file /user/sparkuser/TrafficViolations.csv exists
      shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
@@ -259,15 +278,15 @@
      args:
        warn: no
      changed_when: false
-
+     
    - name: Put /user/sparkuser/TrafficViolations.csv
      command: "sudo -u sparkuser hadoop fs -put {{item}}"
      with_items:
        - "/home/sparkuser/TrafficViolations.csv"
      when: retval.results[0].stdout == "1"
      args:
-       warn: no
-
+       warn: no 
+ 
    - name: Check if HDFS file /user/sparkuser/TrafficViolations.csv.gz exists
      shell: "sudo -u sparkuser hadoop fs -test -f {{item}}; echo $?"
      with_items:
@@ -276,15 +295,15 @@
      args:
        warn: no
      changed_when: false
-
+     
    - name: Put /user/sparkuser/TrafficViolations.csv.gz
      command: "sudo -u sparkuser hadoop fs -put {{item}}"
      with_items:
        - "/home/sparkuser/TrafficViolations.csv.gz"
      when: retval.results[0].stdout == "1"
      args:
-       warn: no
-   
+       warn: no 
+ 
    - name: Check if HDFS directory /user/sparkuser/uber_data_nyc_2016-06_3m_partitioned.csv exists
      shell: "sudo -u sparkuser hadoop fs -test -d {{item}}; echo $?"
      with_items:
@@ -294,7 +313,7 @@
        warn: no
      changed_when: false
    - debug: var=retval
-
+     
    - name: Put /user/sparkuser/uber_data_nyc_2016-06_3m_partitioned.csv
      command: "sudo -u sparkuser hadoop fs -put {{item}}"
      with_items:
@@ -303,8 +322,8 @@
      args:
        warn: no
 
-    
    - name: Install python modules
+     #pip: name={{item}} state=present extra_args="--upgrade"
      pip: name={{item}} state=present
      with_items:
        - bokeh
@@ -312,9 +331,48 @@
        - blaze
        - sqlalchemy
        - pymongo
-
+       - psycopg2
+       - pygraphviz
+       - xlrd
+       - pandas
+       - scikit-learn
+       - tables
+       - openpyxl
+       - pytube
    - name: Install packages
-     yum: name={{item}} state=present
+     yum: name={{item}} state=present 
      with_items:
        - tkinter
        - python34-tkinter
+       - graphviz
+       - graphviz-devel
+
+   - name: Clone projects from remote repositories.
+     git:
+       repo: "{{item.repo}}"
+       dest: "{{item.dest}}"
+     with_items:
+       - { repo: "https://github.com/rofl0r/proxychains-ng.git",dest: "{{GIT_DIR}}proxychains-ng" }
+
+   - name: Install proxychains.
+     shell: |
+       ./configure && make && make install
+       cat src/proxychains.conf| \
+           sed -e 's/^socks4.*$/socks5 {{PROXY_SERV}} 1080/' \
+               -e 's/^#quiet_mode.*$/quiet_mode/' \
+               > /etc/proxychains.conf
+     args:
+       chdir: "{{GIT_DIR}}proxychains-ng"
+       executable: /bin/sh
+       creates: "/etc/proxychains.conf" 
+      
+   - name: Set environment variable PATH, append /usr/local/bin
+     lineinfile:
+       path: /etc/profile
+       regexp: '^export PATH=\$PATH:/usr/local/bin$'
+       state: absent
+   - name: Set environment variable PATH, append /usr/local/bin
+     lineinfile:
+       path: /etc/profile
+       regexp: '^export PATH=\$PATH:/usr/local/bin$'
+       line: 'export PATH=$PATH:/usr/local/bin'
