@@ -339,6 +339,9 @@
        - tables
        - openpyxl
        - pytube
+       - pathlib
+       - ipywidgets
+
    - name: Install packages
      yum: name={{item}} state=present 
      with_items:
@@ -346,6 +349,16 @@
        - python34-tkinter
        - graphviz
        - graphviz-devel
+
+   - name: Enable widgetsnbextension for root user
+     command: "jupyter nbextension enable --py widgetsnbextension"
+     #args:
+     #  warn: no
+
+   - name: Enable widgetsnbextension for sparkuser user
+     command: "sudo -u sparkuser jupyter nbextension enable --py widgetsnbextension"
+     args:
+       warn: no
 
    - name: Clone projects from remote repositories.
      git:
